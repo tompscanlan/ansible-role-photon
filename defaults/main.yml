@@ -42,3 +42,13 @@ photon_packages:
   - less
   - python-setuptools
   - tar
+
+# vars related to esx or vcenter host for ova import
+photon_vm_host:
+photon_vm_host_url: "https://{{ photon_vm_host }}/sdk"
+photon_vm_host_username: root
+photon_vm_host_password: "VMware1!"
+photon_vm_host_insecure: False
+photon_vm_host_datastore: "datastore"
+photon_vm_ova: "/path/to/photon.ova"
+photon_vm_spec: "/path/to/photon.spec.txt"

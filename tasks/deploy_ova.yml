@@ -1,0 +1,82 @@
+#
+#  Copyright 2017 VMware, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+---
+
+- name: Check for existing VM
+  command: "govc vm.info {{ inventory_hostname |quote }}"
+  environment:
+    GOVC_HOST: "{{ photon_vm_host }}"
+    GOVC_URL: "https://{{ photon_vm_host }}/sdk"
+    GOVC_USERNAME: "{{ photon_vm_host_username }}"
+    GOVC_PASSWORD: "{{ photon_vm_host_password }}"
+    GOVC_INSECURE: "{{ photon_vm_host_insecure }}"
+  changed_when: False
+  register: photon_vm_govc_info
+
+- debug: msg="{{ photon_vm_govc_info }}"
+
+- name: Import OVA
+  command: >
+    govc import.ova
+    {% if photon_vm_spec is defined %}
+      -options={{ photon_vm_spec }}
+    {% endif %}
+    -name={{ inventory_hostname |quote }}
+    {{ photon_vm_ova |quote }}
+  environment:
+
+    GOVC_HOST: "{{ photon_vm_host }}"
+    GOVC_URL: "https://{{ photon_vm_host }}/sdk"
+    GOVC_USERNAME: "{{ photon_vm_host_username }}"
+    GOVC_PASSWORD: "{{ photon_vm_host_password }}"
+    GOVC_INSECURE: "{{ photon_vm_host_insecure }}"
+    GOVC_DATASTORE: "{{ photon_vm_host_datastore}}"
+  register: command_result
+  when: "photon_vm_govc_info.rc != 0 or 'UUID' not in photon_vm_govc_info.stdout"
+
+- debug:
+    msg: "{{ command_result }}"
+
+- name: On Import Failed
+  fail:
+    msg: "Failed to import vm {{ command_result.0.name }}"
+  when: "command_result.skipped is defined and not command_result.skipped and command_result.rc != 0"
+
+
+# verify that it exists now
+- name: Check for existing VM
+  command: "govc vm.info {{ inventory_hostname |quote }}"
+  environment:
+    GOVC_HOST: "{{ photon_vm_host }}"
+    GOVC_URL: "https://{{ photon_vm_host }}/sdk"
+    GOVC_USERNAME: "{{ photon_vm_host_username }}"
+    GOVC_PASSWORD: "{{ photon_vm_host_password }}"
+    GOVC_INSECURE: "{{ photon_vm_host_insecure }}"
+  changed_when: False
+  register: photon_vm_govc_info
+
+- assert:
+    that: inventory_hostname in photon_vm_govc_info.stdout
+
+#
+#- name: Restart OMS after upgrade
+#  vsphere_guest:
+#    vcenter_hostname: "{{ vio_oms_vcenter_hostname }}"
+#    username: "{{ vio_oms_vcenter_username }}"
+#    password: "{{ vio_oms_vcenter_pwd }}"
+#    guest: management-server
+#    state: restarted
+#

@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 language: python
 services:
   - docker
@@ -6,10 +6,16 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 install:
+  - pip install ansible==2.2.1.0
   - pip install molecule
   # - pip install required driver (e.g. docker, python-vagrant, shade)
   - pip install docker
   - mkdir tests/roles
   - ln -s ../ tests/roles/photon
 script:
-  - MOLECULE_PLAYBOOK=tests/travis-playbook.yml molecule test
+  - set -x
+  - export MOLECULE_PLAYBOOK=tests/travis-playbook.yml
+  - export ANSIBLE_CONFIG=.molecule/ansible.cfg
+  - molecule --debug create
+  - ansible-playbook -i .molecule/ansible_inventory tests/travis-playbook.yml --list-hosts --list-tasks --list-tags
+  - molecule --debug test

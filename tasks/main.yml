@@ -20,6 +20,13 @@
     msg: "Skipping non photon hosts"
   when: ansible_distribution != 'VMware Photon'
 
+#- include: deploy_ova.yml
+#  when: >
+#    ansible_distribution == 'VMware Photon'
+#    and photon_vm_host is defined
+#    and photon_vm_ova is defined
+#    and photon_vm_spec is defined
+
 
 # -------- package management
 - include: yum.yml
